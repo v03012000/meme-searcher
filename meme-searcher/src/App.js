@@ -1,24 +1,66 @@
-import logo from './logo.svg';
+import React,{useEffect,useState} from 'react';
 import './App.css';
-
+import SearchContainer from '../src/containers/SearchContainer.js'
+import { AppBar,Toolbar,IconButton,Typography } from '@material-ui/core';
+import MemeGenerator from '../src/containers/MemeGenerator';
+import Footer from '../src/containers/Footer';
 function App() {
+  const [allMemes,setMemes]=useState([]);
+  const [search,setSearch]=useState("");
+  let abc=[]
+useEffect(() => {
+  async function fetchData() {
+    const response=await fetch('https://api.imgflip.com/get_memes');
+    const data= await response.json();
+    const extra=data.data.memes;
+    setMemes(extra);
+  }
+  fetchData();
+}, []);
+if(allMemes.length>0)
+{
+ abc=allMemes;
+}
+const extra=abc.filter(meme =>meme.name.toLowerCase().includes(search)).slice(0,30);
+let val="";
+
+let val3="";
+if(extra.length===0)
+{
+val="No Meme Template Found!!  😔 ";
+}
+if(search==='')
+{
+val3="Select an image and then click edit option";
+}
+
+function handleSearch(event)
+{
+  setSearch(event.target.value);
+}
+
+
+
+
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+     <AppBar position="static">
+     <Toolbar variant="dense">
+    
+    <Typography variant="h6" color="inherit">
+    Meme Maker
+    </Typography>
+  </Toolbar>
+</AppBar>
+    <SearchContainer onSearch={handleSearch}/>
+     <br></br>
+     <MemeGenerator memesArray={
+  abc.filter(meme =>meme.name.toLowerCase().includes(search)).slice(0,6)} />
+  <h1> {val}</h1>
+  <Footer/>
     </div>
+  
   );
 }
 
