@@ -3,6 +3,7 @@ import './App.css';
 import SearchContainer from '../src/containers/SearchContainer.js'
 import { AppBar,Toolbar,IconButton,Typography } from '@material-ui/core';
 import MemeGenerator from '../src/containers/MemeGenerator';
+import { Stage, Layer, Text,Image,Line } from "react-konva";
 import Footer from '../src/containers/Footer';
 function App() {
   const [allMemes,setMemes]=useState([]);
@@ -38,16 +39,10 @@ function handleSearch(event)
 {
   setSearch(event.target.value);
 }
-
-
-
-
-
   return (
     <div className="App">
      <AppBar position="static">
      <Toolbar variant="dense">
-    
     <Typography variant="h6" color="inherit">
     Meme Maker
     </Typography>

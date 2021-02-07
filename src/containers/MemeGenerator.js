@@ -1,20 +1,31 @@
-import React, { Component,useState} from "react";
+import React, { useRef, useLayoutEffect,useState} from "react";
 import CurrentImage from './CurrentImage';
 import TextField from './TextField';
 import MemeLibrary from './MemeLibrary';
-
-
+import { Stage, Layer, Image as Imag} from "react-konva";
+import {rect,Konva} from "konva";
 export default function MemeGenerator(props) {
 
-    const [currentImage,setCurrImg]=useState("https://i.imgflip.com/1ur9b0.jpg");
+    const [currentImage,setCurrImg]=useState("");
     const [textadded,setText]=useState("");
     const [x,setX]=useState(0);
     const [y,setY]=useState(0);
     const [allEdits,setEdits]=useState([]);
+    const [color, setColor]=useState("Black");
+    const [fontsize, setFontSize]=useState(14);
+ function handlecolor(event)
+ {
+   setColor(event.target.getAttribute("value"));
+ }
+
+ function handlefont(e)
+ {
+setFontSize(e.target.getAttribute("value"));
+ }
 
    let onSaveMeme = e => {
         e.preventDefault();
-        const canv = document.getElementById("imageCanvas");
+        const canv = document.getElementById("finalcanvas");
         // Canvas2Image.saveAsPNG(canv);
         var image = canv
           .toDataURL("image/png")
@@ -22,71 +33,49 @@ export default function MemeGenerator(props) {
         window.location.href = image;
       };
   
-  const calculateAspectRatio = function(image) {
-      let canvas = document.getElementById("imageCanvas");
+      const [size, setSize] = useState([0,0]);
+      const targetRef = useRef();
+      useLayoutEffect(() => {
+        function updateSize() {
+          setSize([window.innerWidth, window.innerHeight]);}
+        window.addEventListener('resize', updateSize);
+        updateSize();
+        return () => window.removeEventListener('resize', updateSize);
+      }, []);
+      const calculateAspectRatio = function(image) {
+        var exampleimg = new Image();
+        exampleimg.src = image.url;
+            let imageAspectRatio = exampleimg.width / exampleimg.height;
+            let canvasAspectRatio = size[0] / size[1];
+            let renderableHeight, renderableWidth, xStart, yStart;
+            let AspectRatio = {};
+            if (imageAspectRatio < canvasAspectRatio) {
+              renderableHeight = size[1];
+              renderableWidth = exampleimg.width * (renderableHeight / size[1]);
+              xStart = (size[0] - renderableWidth) / 2;
+              yStart = 0;
+            }
+            else if (imageAspectRatio > canvasAspectRatio) {
+              renderableWidth = size[0];
+              renderableHeight = exampleimg.height * (renderableWidth / exampleimg.width);
+              xStart = 0;
+              yStart = (size[0] - renderableHeight) / 2;
+            }
+            else {
+              renderableHeight = size[1];
+              renderableWidth = size[0];
+              xStart = 0;
+              yStart = 0;
+            }
+            AspectRatio.renderableHeight = renderableHeight;
+            AspectRatio.renderableWidth = renderableWidth;
+            AspectRatio.startX = xStart;
+            AspectRatio.startY = yStart;
+            return AspectRatio;
+          };
     
-      let imageAspectRatio = image.width / image.height;
-      let canvasAspectRatio = canvas.width / canvas.height;
-      let renderableHeight, renderableWidth, xStart, yStart;
-      let AspectRatio = {};
-    
-      // If image's aspect ratio is less than canvas's we fit on height
-      // and place the image centrally along width
-      if (imageAspectRatio < canvasAspectRatio) {
-        renderableHeight = canvas.height;
-        renderableWidth = image.width * (renderableHeight / image.height);
-        xStart = (canvas.width - renderableWidth) / 2;
-        yStart = 0;
-      }
-    
-      // If image's aspect ratio is greater than canvas's we fit on width
-      // and place the image centrally along height
-      else if (imageAspectRatio > canvasAspectRatio) {
-        renderableWidth = canvas.width;
-        renderableHeight = image.height * (renderableWidth / image.width);
-        xStart = 0;
-        yStart = (canvas.width - renderableHeight) / 2;
-      }
-    
-      //keep aspect ratio
-      else {
-        renderableHeight = canvas.height;
-        renderableWidth = canvas.width;
-        xStart = 0;
-        yStart = 0;
-      }
-      AspectRatio.renderableHeight = renderableHeight;
-      AspectRatio.renderableWidth = renderableWidth;
-      AspectRatio.startX = xStart;
-      AspectRatio.startY = yStart;
-      return AspectRatio;
-    };
-    
-     const loadImageInCanvas = event => {
-      const canvas = document.getElementById("imageCanvas");
-      const ctx = canvas.getContext("2d");
-      const img = new Image();
-     // const img="https://i.imgflip.com/1ur9b0.jpg"
-      img.src = event ? event.target.src :"https://i.imgflip.com/1ur9b0.jpg";
-      img.crossOrigin = "Anonymous";
-      img.addEventListener("load", () => {
-        //ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-        // from studyJS
-        let AR = calculateAspectRatio(img);
-        ctx.drawImage(
-          img,
-          AR.startX,
-          AR.startY,
-          AR.renderableWidth,
-          AR.renderableHeight
-        );
-      });
-    };
-    
-    const handleImgClick = e => {
-     setCurrImg= e.target;
-      loadImageInCanvas(e);
+    function handleImgClick(e){
+      setCurrImg(e.target);
     };
 
     function getMousePos(canvas, e) {
@@ -106,36 +95,23 @@ export default function MemeGenerator(props) {
     {
         val2="Available meme templates";
     }
-    function handleText(e) {
-      const canv = e.target;
-      const ctx = canv.getContext("2d");
-      const pos = getMousePos(canv, e);
-      ctx.font = "800 40px Impact, Arial";
-      ctx.fillStyle = "black";
-      ctx.fillText(textadded, pos.x, pos.y);
-      setEdits(prevEdits => {
-          return [...prevEdits, {
-              posX: pos.x,
-              posY: pos.y,
-              text: textadded}];
-        });
-        return allEdits;
-    }
-    let addTextToCanvas = e => {
-      e.preventDefault();
-      handleText(e);
+  
+    function addTextToCanvas() {
+     // e.preventDefault();
       setText("");
-    };
+     // console.log(textadded);
+    }
     let removeLastText = e => {
       e.preventDefault();
       const canv = document.getElementById("imageCanvas");
       const ctx = canv.getContext("2d");
-      setEdits(allEdits.pop());
-      loadImageInCanvas(false);
+      let changed=allEdits;
+      changed.pop();
+      setEdits(changed);
   
       setTimeout(() => {
-        ctx.font = "800 40px Impact, Arial";
-        ctx.fillStyle = "#433487";
+        ctx.font = "800 20px Impact, Arial";
+        ctx.fillStyle = "black";
         allEdits.forEach(edit => {
           ctx.fillText(edit.text, edit.posX, edit.posY);
         });
@@ -147,19 +123,26 @@ export default function MemeGenerator(props) {
                     removeLastText={removeLastText}
                     userText={textadded}
                     handleTextChange={handleTextChange}
+                    changecolor={handlecolor}
+                    changefont={handlefont}
+                    after={addTextToCanvas}
                     />
-                
+              
                   <CurrentImage
                     currentImage={currentImage}
-                    addTextToCanvas={addTextToCanvas}
+                    addTextToCanvas={textadded}
                     onSaveMeme={onSaveMeme}
+                    c={color}
+                    f={fontsize}
+                    
+                    
                   />
                 <hr />
                 <h1>{val2}</h1>
                 <br></br>
                 <MemeLibrary
                   allImages={props.memesArray}
-                  handleImgClick={handleImgClick}
+                  click={handleImgClick}
                 />
         
         </div> 
